@@ -1,6 +1,6 @@
 #Based on https://ruslanspivak.com/lsbasi-part1/
 
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, ASTERICK, F_SLASH, EOF = 'INTEGER', 'PLUS', 'MINUS', 'ASTERICK', 'F_SLASH', 'EOF'
 
 class Token(object):
     def __init__(self, type, value):
@@ -23,6 +23,9 @@ class Interpreter(object):
         self.current_token = None
         self.current_char = self.text[self.pos]
 
+    ##########################################################
+    # Lexer code                                             #
+    ##########################################################
     def error(self):
         raise Exception('Error parsing input')
 
@@ -61,36 +64,52 @@ class Interpreter(object):
             if self.current_char == "-":
                 self.advance()
                 return Token(MINUS, "-")
-        
+
+            if self.current_char == "*":
+                self.advance()
+                return Token(ASTERICK, "*")
+
+            if self.current_char == "/":
+                self.advance()
+                return Token(F_SLASH, "/")
+
             self.error()
 
         return Token(EOF, None)
 
+    ##########################################################
+    # Parser / Interpreter code                              #
+    ##########################################################
     def eat(self, token_type):
         if self.current_token.type == token_type:
             self.current_token = self.get_next_token()
         else:
             self.error()
 
+    def term(self):
+        token = self.current_token
+        self.eat(INTEGER)
+        return token.value
+
     def expr(self):
         self.current_token = self.get_next_token()
 
-        left = self.current_token
-        self.eat(INTEGER)
+        result = self.term()
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
+            elif token.type == ASTERICK:
+                self.eat(ASTERICK)
+                result = result * self.term()
+            elif token.type == F_SLASH:
+                self.eat(F_SLASH)
+                result = result / self.term()
 
-        op = self.current_token
-        if op.type == PLUS:
-            self.eat(PLUS)
-        elif op.type == MINUS:
-            self.eat(MINUS)
-
-        right = self.current_token
-        self.eat(INTEGER)
-        
-        if op.type == PLUS:
-            result = left.value + right.value
-        elif op.type == MINUS:
-            result = left.value - right.value
         return result
 
 
