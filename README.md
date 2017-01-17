@@ -1,2 +1,2 @@
-# Pascal_Interpreter
-An interpreter for the pascal language
+# Interpreter
+Learning about interpreters
