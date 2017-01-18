@@ -1,5 +1,3 @@
-#Based on https://ruslanspivak.com/lsbasi-part1/
-
 INTEGER, PLUS, MINUS, ASTERICK, F_SLASH, EOF = 'INTEGER', 'PLUS', 'MINUS', 'ASTERICK', 'F_SLASH', 'EOF'
 
 class Token(object):
