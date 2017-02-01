@@ -1,27 +1,16 @@
-# Token types
-#
-# EOF (end-of-file) token is used to indicate that
-# there is no more input left for lexical analysis
 INTEGER, PLUS, MINUS, MUL, DIV, EOF = (
     'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'EOF'
 )
 
-
+# Token(type, value)
+# type: ex. INTEGER, PLUS...
+# value: ex. non-negative number, +, *, /, -...
 class Token(object):
     def __init__(self, type, value):
-        # token type: INTEGER, PLUS, MINUS, MUL, DIV, or EOF
         self.type = type
-        # token value: non-negative integer value, '+', '-', '*', '/', or None
         self.value = value
 
     def __str__(self):
-        """String representation of the class instance.
-
-        Examples:
-            Token(INTEGER, 3)
-            Token(PLUS, '+')
-            Token(MUL, '*')
-        """
         return 'Token({type}, {value})'.format(
             type=self.type,
             value=repr(self.value)
@@ -30,46 +19,40 @@ class Token(object):
     def __repr__(self):
         return self.__str__()
 
-
+# In charge of breaking down the statement into tokens
 class Lexer(object):
     def __init__(self, text):
-        # client string input, e.g. "3 * 5", "12 / 3 * 4", etc
         self.text = text
-        # self.pos is an index into self.text
         self.pos = 0
         self.current_char = self.text[self.pos]
 
     def error(self):
         raise Exception('Invalid character')
 
+    # Advances the current char being evaluated
     def advance(self):
-        """Advance the `pos` pointer and set the `current_char` variable."""
         self.pos += 1
         if self.pos > len(self.text) - 1:
-            self.current_char = None  # Indicates end of input
+            self.current_char = None
         else:
             self.current_char = self.text[self.pos]
 
+    # Skips whitespace that doesn't effect statement
     def skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
+    # If number is detected, continues scanning statement for multidigit numbers
     def integer(self):
-        """Return a (multidigit) integer consumed from the input."""
         result = ''
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
         return int(result)
 
+    # Fetches next token in statment
     def get_next_token(self):
-        """Lexical analyzer (also known as scanner or tokenizer)
-
-        This method is responsible for breaking a sentence
-        apart into tokens. One token at a time.
-        """
         while self.current_char is not None:
-
             if self.current_char.isspace():
                 self.skip_whitespace()
                 continue
@@ -97,34 +80,30 @@ class Lexer(object):
 
         return Token(EOF, None)
 
-
+# In charge of taking the tokens and interpreting them into runnable statement
 class Interpreter(object):
     def __init__(self, lexer):
         self.lexer = lexer
-        # set current token to the first token taken from the input
         self.current_token = self.lexer.get_next_token()
 
     def error(self):
         raise Exception('Invalid syntax')
 
+    # "Eats token"
     def eat(self, token_type):
-        # compare the current token type with the passed token
-        # type and if they match then "eat" the current token
-        # and assign the next token to the self.current_token,
-        # otherwise raise an exception.
         if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()
         else:
             self.error()
 
+    # Calls the eating fuction on current token
     def factor(self):
-        """factor : INTEGER"""
         token = self.current_token
         self.eat(INTEGER)
         return token.value
 
+    # Multiplication and division logic
     def term(self):
-        """term : factor ((MUL | DIV) factor)*"""
         result = self.factor()
 
         while self.current_token.type in (MUL, DIV):
@@ -138,16 +117,9 @@ class Interpreter(object):
 
         return result
 
+    # Addition and subtraction logic
     def expr(self):
-        """Arithmetic expression parser / interpreter.
-
-        calc>  14 + 2 * 3 - 6 / 2
-        17
-
-        expr   : term ((PLUS | MINUS) term)*
-        term   : factor ((MUL | DIV) factor)*
-        factor : INTEGER
-        """
+        #Does multiplication and division first because of order of operations
         result = self.term()
 
         while self.current_token.type in (PLUS, MINUS):
